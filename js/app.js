@@ -211,6 +211,58 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
 document.getElementById("metaProducts").textContent = totalProducts();
 buildNav();
 buildSections();
+initSearch();
+
+function normalizeText(s){
+  return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
+}
+
+function initSearch(){
+  const input = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("searchClear");
+
+  input.addEventListener("input", ()=>{
+    clearBtn.hidden = input.value.length === 0;
+    applySearch(input.value);
+  });
+
+  clearBtn.addEventListener("click", ()=>{
+    input.value = "";
+    clearBtn.hidden = true;
+    applySearch("");
+    input.focus();
+  });
+}
+
+function applySearch(rawQuery){
+  const q = normalizeText(rawQuery.trim());
+  let anyMatch = false;
+
+  CATALOG.forEach(cat=>{
+    let visibleInCat = 0;
+    cat.items.forEach(it=>{
+      const haystack = normalizeText(it.name + " " + (it.benefit || ""));
+      const match = q === "" || haystack.includes(q);
+      const card = document.getElementById("card-"+it.id);
+      if(card) card.style.display = match ? "" : "none";
+      if(match) visibleInCat++;
+    });
+
+    const sec = document.getElementById("sec-"+cat.n);
+    if(sec){
+      sec.style.display = visibleInCat === 0 ? "none" : "";
+      const countEl = sec.querySelector(".section-count");
+      if(countEl){
+        countEl.textContent = q === ""
+          ? cat.items.length + (cat.items.length === 1 ? " producto" : " productos")
+          : visibleInCat + (visibleInCat === 1 ? " resultado" : " resultados");
+      }
+    }
+    if(visibleInCat > 0) anyMatch = true;
+  });
+
+  document.getElementById("searchEmpty").hidden = anyMatch || q === "";
+}
 renderCart();
 
 // scroll-spy for nav active state
