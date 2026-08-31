@@ -1,6 +1,9 @@
 const WHATSAPP_NUMBER = "5491172393830";
 const MIN_ORDER = 250000; // compra minima mayorista, en pesos
 
+document.getElementById("whatsappFab").href =
+  "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent("¡Hola! Quería hacerles una consulta sobre jeong.");
+
 
 // unique id per item
 CATALOG.forEach((cat,ci)=>cat.items.forEach((it,ii)=>it.id = ci+"-"+ii));
@@ -197,7 +200,8 @@ document.getElementById("cartList").addEventListener("click",(e)=>{
 // toggle comanda open/close
 const comandaInner = document.getElementById("comandaInner");
 document.getElementById("comandaTab").addEventListener("click", ()=>{
-  comandaInner.classList.toggle("open");
+  const isOpen = comandaInner.classList.toggle("open");
+  document.getElementById("whatsappFab").classList.toggle("fab-hidden", isOpen);
 });
 
 document.getElementById("sendBtn").addEventListener("click", ()=>{

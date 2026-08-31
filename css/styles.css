@@ -542,7 +542,34 @@
   .send-btn:disabled{background:var(--mist); color:var(--charcoal); cursor:not-allowed; transform:none; box-shadow:none;}
   .send-btn svg{width:17px;height:17px;flex:none;}
 
+  .whatsapp-fab{
+    position:fixed;
+    right:20px;
+    bottom:74px;
+    z-index:45;
+    pointer-events:auto;
+    width:54px;
+    height:54px;
+    border-radius:50%;
+    background:#25D366;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 6px 18px rgba(21,19,18,0.28);
+    transition:transform .15s ease, opacity .2s ease;
+  }
+  .whatsapp-fab:hover{transform:scale(1.06);}
+  .whatsapp-fab:active{transform:scale(0.96);}
+  .whatsapp-fab svg{width:27px;height:27px;}
+  .whatsapp-fab.fab-hidden{
+    opacity:0;
+    pointer-events:none;
+  }
+
   @media (max-width:640px){
+    .whatsapp-fab{right:16px; bottom:70px; width:50px; height:50px;}
+    .whatsapp-fab svg{width:25px;height:25px;}
     .hero{padding:40px 18px 22px;}
     .catnav{padding:12px 18px;}
     main{padding:0 18px;}
