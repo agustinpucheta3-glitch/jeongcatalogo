@@ -135,6 +135,7 @@ function renderCart(){
   const list = document.getElementById("cartList");
   if(ids.length === 0){
     list.innerHTML = `<div class="comanda-empty">Todavía no agregaste productos. Elegí cantidades arriba y volvé acá para revisar tu pedido.</div>`;
+    renderProfitBox(ids);
     return;
   }
   list.innerHTML = "";
@@ -151,6 +152,27 @@ function renderCart(){
     `;
     list.appendChild(row);
   });
+
+  renderProfitBox(ids);
+}
+
+function renderProfitBox(ids){
+  const withRetail = ids.filter(id => findItem(id).retail);
+  const profitBox = document.getElementById("profitBox");
+
+  if(withRetail.length === 0){
+    profitBox.hidden = true;
+    return;
+  }
+
+  const cost = withRetail.reduce((a,id)=>a+cart[id]*findItem(id).price,0);
+  const retailTotal = withRetail.reduce((a,id)=>a+cart[id]*findItem(id).retail,0);
+  const gain = retailTotal - cost;
+
+  document.getElementById("profitCost").textContent = fmt(cost);
+  document.getElementById("profitRetail").textContent = fmt(retailTotal);
+  document.getElementById("profitGain").textContent = fmt(gain);
+  profitBox.hidden = false;
 }
 
 document.getElementById("cartList").addEventListener("click",(e)=>{
@@ -264,14 +286,29 @@ function openPanel(id){
   panelOverlay.classList.add("open");
   productPanel.classList.add("open");
   document.body.style.overflow = "hidden";
+  history.pushState({ jeongPanel: true }, "");
 }
 
 function closePanel(){
+  if(!productPanel.classList.contains("open")) return;
+  // if we pushed a history entry for this panel, go back to consume it —
+  // that fires popstate, which actually hides the panel (see below).
+  // This keeps the phone's back button in sync with the panel state.
+  if(history.state && history.state.jeongPanel){
+    history.back();
+  } else {
+    hidePanel();
+  }
+}
+
+function hidePanel(){
   panelOverlay.classList.remove("open");
   productPanel.classList.remove("open");
   document.body.style.overflow = "";
   panelItemId = null;
 }
+
+window.addEventListener("popstate", hidePanel);
 
 function catTitleForId(id){
   const [ci] = id.split("-").map(Number);
