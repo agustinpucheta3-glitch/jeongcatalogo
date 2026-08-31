@@ -1,4 +1,5 @@
 const WHATSAPP_NUMBER = "5491172393830";
+const MIN_ORDER = 250000; // compra minima mayorista, en pesos
 
 
 // unique id per item
@@ -130,7 +131,15 @@ function renderCart(){
 
   document.getElementById("cartCount").textContent = count;
   document.getElementById("cartTotal").textContent = fmt(total);
-  document.getElementById("sendBtn").disabled = count === 0;
+  document.getElementById("sendBtn").disabled = count === 0 || total < MIN_ORDER;
+
+  const minNote = document.getElementById("minOrderNote");
+  if(count > 0 && total < MIN_ORDER){
+    minNote.hidden = false;
+    minNote.textContent = `Te faltan ${fmt(MIN_ORDER - total)} para llegar al mínimo mayorista de ${fmt(MIN_ORDER)}.`;
+  } else {
+    minNote.hidden = true;
+  }
 
   const list = document.getElementById("cartList");
   if(ids.length === 0){
