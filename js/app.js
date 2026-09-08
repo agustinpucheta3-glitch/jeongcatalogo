@@ -1,5 +1,7 @@
 const WHATSAPP_NUMBER = "5491172393830";
 const MIN_ORDER = 250000; // compra minima mayorista, en pesos
+const SHIPPING_COST = 15000; // envio fijo por Andreani, en pesos
+let shippingCalculated = false;
 
 document.getElementById("whatsappFab").href =
   "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent("¡Hola! Quería hacerles una consulta sobre jeong.");
@@ -13,6 +15,20 @@ const fmt = n => "$" + n.toLocaleString("es-AR");
 
 function totalProducts(){
   return CATALOG.reduce((a,c)=>a+c.items.length,0);
+}
+
+// dias que faltan hasta restockDate (baja solo, dia a dia, sin tocar codigo)
+function daysUntilRestock(dateStr){
+  const target = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return Math.ceil((target - today) / 86400000);
+}
+
+function restockLabel(it){
+  const days = daysUntilRestock(it.restockDate);
+  if(days <= 0) return "Disponible en breve";
+  return "Disponible en " + days + (days === 1 ? " día" : " días");
 }
 
 function buildNav(){
@@ -48,20 +64,27 @@ function buildSections(){
     const grid = sec.querySelector(".grid");
     cat.items.forEach(it=>{
       const card = document.createElement("div");
-      card.className = "card";
+      card.className = "card" + (it.soldOut ? " sold-out" : "");
       card.id = "card-"+it.id;
       if(it.benefit){ card.setAttribute("data-has-detail","1"); }
       card.innerHTML = `
-        <div class="card-img-wrap"><img class="card-img" src="${it.img}" alt="${it.name}" loading="lazy"></div>
+        <div class="card-img-wrap">
+          <img class="card-img" src="${it.img}" alt="${it.name}" loading="lazy">
+          ${it.soldOut ? '<span class="sold-out-badge">Agotado</span>' : ''}
+        </div>
         <div class="card-name">${it.name}</div>
         <div class="card-size">${it.size}</div>
         <div class="card-bottom">
           <div class="card-price">${fmt(it.price)}</div>
+          ${it.soldOut ? `
+          <div class="restock-note">${restockLabel(it)}</div>
+          ` : `
           <div class="stepper">
             <button aria-label="Restar" data-act="minus" data-id="${it.id}">−</button>
             <input class="qty" id="qty-${it.id}" type="number" inputmode="numeric" min="0" step="1" value="0" data-id="${it.id}" aria-label="Cantidad">
             <button aria-label="Sumar" data-act="plus" data-id="${it.id}">+</button>
           </div>
+          `}
         </div>
       `;
       grid.appendChild(card);
@@ -103,12 +126,14 @@ function findItem(id){
 }
 
 function changeQty(id, delta){
+  if(findItem(id).soldOut) return;
   const current = cart[id] || 0;
   const next = Math.max(0, current + delta);
   applyQty(id, next);
 }
 
 function setQty(id, rawValue){
+  if(findItem(id).soldOut) return;
   let next = parseInt(rawValue, 10);
   if(isNaN(next) || next < 0) next = 0;
   applyQty(id, next);
@@ -134,7 +159,7 @@ function renderCart(){
 
   document.getElementById("cartCount").textContent = count;
   document.getElementById("cartTotal").textContent = fmt(total);
-  document.getElementById("sendBtn").disabled = count === 0 || total < MIN_ORDER;
+  document.getElementById("sendBtn").disabled = count === 0 || total < MIN_ORDER || !shippingCalculated;
 
   const minNote = document.getElementById("minOrderNote");
   if(count > 0 && total < MIN_ORDER){
@@ -142,6 +167,11 @@ function renderCart(){
     minNote.textContent = `Te faltan ${fmt(MIN_ORDER - total)} para llegar al mínimo mayorista de ${fmt(MIN_ORDER)}.`;
   } else {
     minNote.hidden = true;
+  }
+
+  document.getElementById("shippingBox").hidden = count === 0;
+  if(shippingCalculated){
+    document.getElementById("shippingGrandTotal").textContent = fmt(total + SHIPPING_COST);
   }
 
   const list = document.getElementById("cartList");
@@ -197,6 +227,45 @@ document.getElementById("cartList").addEventListener("click",(e)=>{
   renderCart();
 });
 
+// paso de envio: se habilita "Calcular envio" cuando estan los 3 campos
+const shipAddress = document.getElementById("shipAddress");
+const shipProvince = document.getElementById("shipProvince");
+const shipZip = document.getElementById("shipZip");
+const shippingCalcBtn = document.getElementById("shippingCalcBtn");
+const shippingResult = document.getElementById("shippingResult");
+
+function shippingFieldsFilled(){
+  return shipAddress.value.trim().length >= 5
+    && shipProvince.value !== ""
+    && shipZip.value.trim().length >= 4;
+}
+
+function resetShippingCalc(){
+  if(!shippingCalculated) return;
+  shippingCalculated = false;
+  shippingResult.hidden = true;
+  renderCart();
+}
+
+[shipAddress, shipProvince, shipZip].forEach(el=>{
+  el.addEventListener("input", ()=>{
+    shippingCalcBtn.disabled = !shippingFieldsFilled();
+    resetShippingCalc();
+  });
+  el.addEventListener("change", ()=>{
+    shippingCalcBtn.disabled = !shippingFieldsFilled();
+    resetShippingCalc();
+  });
+});
+
+shippingCalcBtn.addEventListener("click", ()=>{
+  if(!shippingFieldsFilled()) return;
+  shippingCalculated = true;
+  document.getElementById("shippingCost").textContent = fmt(SHIPPING_COST);
+  shippingResult.hidden = false;
+  renderCart();
+});
+
 // toggle comanda open/close
 const comandaInner = document.getElementById("comandaInner");
 document.getElementById("comandaTab").addEventListener("click", ()=>{
@@ -206,7 +275,7 @@ document.getElementById("comandaTab").addEventListener("click", ()=>{
 
 document.getElementById("sendBtn").addEventListener("click", ()=>{
   const ids = Object.keys(cart);
-  if(ids.length === 0) return;
+  if(ids.length === 0 || !shippingCalculated) return;
   let msg = "Hola! Quiero hacer este pedido a jeong:\n\n";
   let total = 0;
   ids.forEach(id=>{
@@ -216,7 +285,12 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
     total += sub;
     msg += `• ${qty}x ${it.name} (${it.size}) — ${fmt(sub)}\n`;
   });
-  msg += `\nTotal: ${fmt(total)}`;
+  msg += `\nSubtotal productos: ${fmt(total)}`;
+  msg += `\nEnvío (Andreani): ${fmt(SHIPPING_COST)}`;
+  msg += `\nTotal con envío: ${fmt(total + SHIPPING_COST)}`;
+  msg += `\n\nDirección de envío:`;
+  msg += `\n${shipAddress.value.trim()}`;
+  msg += `\n${shipProvince.value} (CP ${shipZip.value.trim()})`;
   const url = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
   window.open(url, "_blank");
 });
@@ -347,6 +421,11 @@ function openPanel(id){
   fillPanelSection("panelIngredientsWrap","panelIngredients", it.ingredients);
   fillPanelSection("panelModoWrap","panelModo", it.modo);
   document.getElementById("panelQty").value = cart[id] || 0;
+
+  document.getElementById("panelStepperRow").hidden = !!it.soldOut;
+  const restockNote = document.getElementById("panelRestockNote");
+  restockNote.hidden = !it.soldOut;
+  if(it.soldOut) restockNote.textContent = "Agotado — " + restockLabel(it);
 
   panelOverlay.classList.add("open");
   productPanel.classList.add("open");

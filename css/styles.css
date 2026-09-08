@@ -254,6 +254,7 @@
     box-shadow:0 1px 2px rgba(21,19,18,0.04), inset 3px 0 0 var(--coral);
   }
   .card-img-wrap{
+    position:relative;
     margin:0 -16px 4px;
     aspect-ratio:1/1;
     overflow:hidden;
@@ -269,6 +270,29 @@
     transition:transform .35s ease;
   }
   .card:hover .card-img{transform:scale(1.045);}
+  .card.sold-out .card-img{filter:grayscale(70%); opacity:.55;}
+  .card.sold-out:hover{transform:none; box-shadow:0 1px 2px rgba(21,19,18,0.04); border-color:var(--line);}
+  .card.sold-out:hover .card-img{transform:none;}
+  .sold-out-badge{
+    position:absolute;
+    top:10px;
+    left:10px;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    padding:5px 10px;
+    border-radius:100px;
+  }
+  .restock-note{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--coral-dark);
+    text-align:right;
+  }
   .card-name{
     font-size:13.5px;
     font-weight:600;
@@ -505,6 +529,110 @@
     color:rgba(247,244,239,0.5);
   }
 
+  .shipping-box{
+    margin:6px 20px 0;
+    padding:14px 16px;
+    border-radius:14px;
+    background:rgba(247,244,239,0.06);
+    border:1px solid rgba(247,244,239,0.18);
+  }
+  .shipping-title{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:13.5px;
+    margin:0 0 4px;
+    color:var(--paper);
+  }
+  .shipping-sub{
+    margin:0 0 12px;
+    font-size:11px;
+    line-height:1.45;
+    color:rgba(247,244,239,0.55);
+  }
+  .shipping-field{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-top:10px;
+  }
+  .shipping-field:first-of-type{margin-top:0;}
+  .shipping-field label{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:rgba(247,244,239,0.55);
+  }
+  .shipping-field input,
+  .shipping-field select{
+    background:rgba(247,244,239,0.08);
+    border:1px solid rgba(247,244,239,0.22);
+    border-radius:8px;
+    padding:9px 10px;
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    outline:none;
+  }
+  .shipping-field input::placeholder{color:rgba(247,244,239,0.4);}
+  .shipping-field input:focus,
+  .shipping-field select:focus{border-color:var(--coral);}
+  .shipping-row{
+    display:flex;
+    gap:10px;
+  }
+  .shipping-row .shipping-field{flex:1; margin-top:10px;}
+  .shipping-field-cp{flex:0 0 120px !important;}
+  .shipping-calc-btn{
+    margin-top:14px;
+    width:100%;
+    padding:11px;
+    border-radius:10px;
+    border:1px solid var(--coral);
+    background:transparent;
+    color:var(--coral);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .shipping-calc-btn:hover:not(:disabled){background:rgba(217,99,57,0.15);}
+  .shipping-calc-btn:disabled{
+    opacity:.35;
+    cursor:not-allowed;
+    border-color:rgba(247,244,239,0.2);
+    color:rgba(247,244,239,0.4);
+  }
+  .shipping-result{
+    margin-top:12px;
+    padding-top:12px;
+    border-top:1px dashed rgba(247,244,239,0.25);
+  }
+  .shipping-result-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:rgba(247,244,239,0.72);
+    padding:3px 0;
+  }
+  .shipping-result-row b{
+    color:var(--paper);
+    font-weight:500;
+  }
+  .shipping-result-total{
+    margin-top:4px;
+    padding-top:8px;
+    border-top:1px dashed rgba(247,244,239,0.25);
+  }
+  .shipping-result-total b{
+    font-size:15px;
+    color:var(--coral);
+  }
+
   .comanda-footer{
     padding:16px 20px 20px;
   }
@@ -717,6 +845,15 @@
     margin-top:6px;
     padding-top:18px;
     border-top:1px solid var(--line);
+  }
+  .panel-restock-note{
+    margin:6px 0 0;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--coral-dark);
   }
   .panel-stepper-row .stepper button{width:34px;height:34px;font-size:17px;}
   .panel-stepper-row .qty{width:40px;font-size:14px;}

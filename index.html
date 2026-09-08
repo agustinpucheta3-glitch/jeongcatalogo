@@ -86,7 +86,8 @@
       <h4>Modo de uso</h4>
       <p id="panelModo"></p>
     </div>
-    <div class="panel-stepper-row">
+    <p class="panel-restock-note" id="panelRestockNote" hidden></p>
+    <div class="panel-stepper-row" id="panelStepperRow">
       <div class="stepper" id="panelStepper">
         <button aria-label="Restar" data-panel-act="minus">−</button>
         <input class="qty" id="panelQty" type="number" inputmode="numeric" min="0" step="1" value="0" aria-label="Cantidad">
@@ -125,6 +126,61 @@
           <b id="profitGain">$0</b>
         </div>
         <p class="profit-note">Precios de venta sugeridos, de referencia — pueden variar según tu zona y estrategia comercial.</p>
+      </div>
+      <div class="shipping-box" id="shippingBox" hidden>
+        <p class="shipping-title">📦 Calculá tu envío</p>
+        <p class="shipping-sub">Los envíos se hacen por Andreani a todo el país.</p>
+        <div class="shipping-field">
+          <label for="shipAddress">Dirección</label>
+          <input type="text" id="shipAddress" placeholder="Calle, número, piso/depto">
+        </div>
+        <div class="shipping-row">
+          <div class="shipping-field">
+            <label for="shipProvince">Provincia</label>
+            <select id="shipProvince">
+              <option value="">Elegí tu provincia</option>
+              <option>Buenos Aires</option>
+              <option>Ciudad Autónoma de Buenos Aires</option>
+              <option>Catamarca</option>
+              <option>Chaco</option>
+              <option>Chubut</option>
+              <option>Córdoba</option>
+              <option>Corrientes</option>
+              <option>Entre Ríos</option>
+              <option>Formosa</option>
+              <option>Jujuy</option>
+              <option>La Pampa</option>
+              <option>La Rioja</option>
+              <option>Mendoza</option>
+              <option>Misiones</option>
+              <option>Neuquén</option>
+              <option>Río Negro</option>
+              <option>Salta</option>
+              <option>San Juan</option>
+              <option>San Luis</option>
+              <option>Santa Cruz</option>
+              <option>Santa Fe</option>
+              <option>Santiago del Estero</option>
+              <option>Tierra del Fuego</option>
+              <option>Tucumán</option>
+            </select>
+          </div>
+          <div class="shipping-field shipping-field-cp">
+            <label for="shipZip">Código postal</label>
+            <input type="text" id="shipZip" placeholder="Ej: 1425" inputmode="numeric" maxlength="8">
+          </div>
+        </div>
+        <button type="button" class="shipping-calc-btn" id="shippingCalcBtn" disabled>Calcular envío</button>
+        <div class="shipping-result" id="shippingResult" hidden>
+          <div class="shipping-result-row">
+            <span>Envío (Andreani)</span>
+            <b id="shippingCost">$0</b>
+          </div>
+          <div class="shipping-result-row shipping-result-total">
+            <span>Total con envío</span>
+            <b id="shippingGrandTotal">$0</b>
+          </div>
+        </div>
       </div>
       <div class="comanda-footer">
         <p class="min-order-note" id="minOrderNote" hidden></p>
