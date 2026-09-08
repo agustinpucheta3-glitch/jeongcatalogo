@@ -577,6 +577,10 @@
   .shipping-field input::placeholder{color:rgba(247,244,239,0.4);}
   .shipping-field input:focus,
   .shipping-field select:focus{border-color:var(--coral);}
+  .shipping-field select option{
+    color:var(--ink);
+    background:#fff;
+  }
   .shipping-row{
     display:flex;
     gap:10px;
