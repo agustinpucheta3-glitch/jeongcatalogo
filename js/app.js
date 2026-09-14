@@ -140,6 +140,7 @@ function setQty(id, rawValue){
 }
 
 function applyQty(id, next){
+  const prev = cart[id] || 0;
   if(next === 0) delete cart[id];
   else cart[id] = next;
 
@@ -149,6 +150,18 @@ function applyQty(id, next){
     const pq = document.getElementById("panelQty");
     if(pq) pq.value = next;
   }
+
+  if(next > prev && typeof fbq === "function"){
+    const it = findItem(id);
+    fbq("track", "AddToCart", {
+      content_ids: [id],
+      content_name: it.name,
+      content_type: "product",
+      value: it.price * (next - prev),
+      currency: "ARS"
+    });
+  }
+
   renderCart();
 }
 
@@ -271,6 +284,18 @@ const comandaInner = document.getElementById("comandaInner");
 document.getElementById("comandaTab").addEventListener("click", ()=>{
   const isOpen = comandaInner.classList.toggle("open");
   document.getElementById("whatsappFab").classList.toggle("fab-hidden", isOpen);
+
+  if(isOpen && typeof fbq === "function"){
+    const ids = Object.keys(cart);
+    if(ids.length > 0){
+      fbq("track", "InitiateCheckout", {
+        content_ids: ids,
+        value: ids.reduce((a,id)=>a+cart[id]*findItem(id).price,0),
+        currency: "ARS",
+        num_items: ids.reduce((a,id)=>a+cart[id],0)
+      });
+    }
+  }
 });
 
 document.getElementById("sendBtn").addEventListener("click", ()=>{
@@ -291,6 +316,15 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
   msg += `\n\nDirección de envío:`;
   msg += `\n${shipAddress.value.trim()}`;
   msg += `\n${shipProvince.value} (CP ${shipZip.value.trim()})`;
+
+  if(typeof fbq === "function"){
+    fbq("track", "Lead", {
+      content_ids: ids,
+      value: total + SHIPPING_COST,
+      currency: "ARS"
+    });
+  }
+
   const url = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(msg);
   window.open(url, "_blank");
 });
@@ -431,6 +465,16 @@ function openPanel(id){
   productPanel.classList.add("open");
   document.body.style.overflow = "hidden";
   history.pushState({ jeongPanel: true }, "");
+
+  if(typeof fbq === "function"){
+    fbq("track", "ViewContent", {
+      content_ids: [id],
+      content_name: it.name,
+      content_type: "product",
+      value: it.price,
+      currency: "ARS"
+    });
+  }
 }
 
 function closePanel(){
