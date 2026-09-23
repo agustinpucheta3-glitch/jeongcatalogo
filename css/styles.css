@@ -580,8 +580,14 @@
     font-family:'Baloo 2',sans-serif;
     font-weight:700;
     font-size:13.5px;
-    margin:0 0 10px;
+    margin:0 0 6px;
     color:var(--paper);
+  }
+  .preventa-breakdown-sub{
+    margin:0 0 12px;
+    font-size:11px;
+    line-height:1.45;
+    color:rgba(247,244,239,0.65);
   }
   .preventa-row{
     display:flex;
@@ -597,11 +603,6 @@
     color:var(--paper);
     font-weight:500;
     white-space:nowrap;
-  }
-  .preventa-row-rest{
-    border-top:1px dashed rgba(247,244,239,0.25);
-    margin-top:4px;
-    padding-top:9px;
   }
   .preventa-row-rest b{
     color:#F0C179;

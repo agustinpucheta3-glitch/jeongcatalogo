@@ -205,9 +205,6 @@ function renderCart(){
   const breakdown = document.getElementById("preventaBreakdown");
   if(preventaIds.length > 0){
     breakdown.hidden = false;
-    document.getElementById("pbStock").textContent = fmt(stockSubtotal);
-    document.getElementById("pbPreventaTotal").textContent = fmt(preventaSubtotal);
-    document.getElementById("pbPreventaDeposit").textContent = fmt(preventaDeposit);
     document.getElementById("pbPreventaRest").textContent = fmt(preventaRest);
   } else {
     breakdown.hidden = true;
@@ -359,14 +356,9 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
     msg += "\n";
   }
 
-  if(stockIds.length > 0) msg += `Subtotal con stock: ${fmt(stockSubtotal)}\n`;
-  if(preventaIds.length > 0){
-    msg += `Subtotal preventa: ${fmt(preventaSubtotal)}\n`;
-    msg += `Seña a pagar ahora (50% preventa): ${fmt(preventaDeposit)}\n`;
-  }
   msg += `Envío (Andreani): ${fmt(SHIPPING_COST)}\n`;
   msg += `\nTOTAL A PAGAR AHORA: ${fmt(payableNow + SHIPPING_COST)}`;
-  if(preventaIds.length > 0) msg += `\nResto a pagar al recibir: ${fmt(preventaRest)}`;
+  if(preventaIds.length > 0) msg += `\nRestante a pagar al recibir: ${fmt(preventaRest)}`;
   msg += `\n\nDirección de envío:`;
   msg += `\n${shipAddress.value.trim()}`;
   msg += `\n${shipProvince.value} (CP ${shipZip.value.trim()})`;
