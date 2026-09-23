@@ -26,6 +26,7 @@ function daysUntilRestock(dateStr){
 }
 
 function restockLabel(it){
+  if(!it.restockDate) return "No disponible";
   const days = daysUntilRestock(it.restockDate);
   if(days <= 0) return "Disponible en breve";
   return "Disponible en " + days + (days === 1 ? " día" : " días");
@@ -459,7 +460,7 @@ function openPanel(id){
   document.getElementById("panelStepperRow").hidden = !!it.soldOut;
   const restockNote = document.getElementById("panelRestockNote");
   restockNote.hidden = !it.soldOut;
-  if(it.soldOut) restockNote.textContent = "Agotado — " + restockLabel(it);
+  if(it.soldOut) restockNote.textContent = it.restockDate ? ("Agotado — " + restockLabel(it)) : "Agotado";
 
   panelOverlay.classList.add("open");
   productPanel.classList.add("open");
