@@ -184,15 +184,16 @@ function renderCart(){
   const preventaDeposit = preventaSubtotal / 2;
   const preventaRest = preventaSubtotal - preventaDeposit;
   const payableNow = stockSubtotal + preventaDeposit;
+  const fullTotal = stockSubtotal + preventaSubtotal; // el minimo se evalua sobre el valor total del pedido, no sobre la seña
 
   document.getElementById("cartCount").textContent = count;
   document.getElementById("cartTotal").textContent = fmt(payableNow);
-  document.getElementById("sendBtn").disabled = count === 0 || payableNow < MIN_ORDER || !shippingCalculated;
+  document.getElementById("sendBtn").disabled = count === 0 || fullTotal < MIN_ORDER || !shippingCalculated;
 
   const minNote = document.getElementById("minOrderNote");
-  if(count > 0 && payableNow < MIN_ORDER){
+  if(count > 0 && fullTotal < MIN_ORDER){
     minNote.hidden = false;
-    minNote.textContent = `Te faltan ${fmt(MIN_ORDER - payableNow)} para llegar al mínimo mayorista de ${fmt(MIN_ORDER)}.`;
+    minNote.textContent = `Te faltan ${fmt(MIN_ORDER - fullTotal)} para llegar al mínimo mayorista de ${fmt(MIN_ORDER)}.`;
   } else {
     minNote.hidden = true;
   }
