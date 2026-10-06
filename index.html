@@ -119,7 +119,7 @@ src="https://www.facebook.com/tr?id=1494451185781026&ev=PageView&noscript=1"
       <p id="panelModo"></p>
     </div>
     <p class="panel-restock-note" id="panelRestockNote" hidden></p>
-    <p class="panel-preventa-note" id="panelPreventaNote" hidden></p>
+    <p class="panel-last-units" id="panelLastUnits" hidden>🔥 Últimas unidades</p>
     <div class="panel-stepper-row" id="panelStepperRow">
       <div class="stepper" id="panelStepper">
         <button aria-label="Restar" data-panel-act="minus">−</button>
@@ -144,30 +144,6 @@ src="https://www.facebook.com/tr?id=1494451185781026&ev=PageView&noscript=1"
     </div>
     <div class="comanda-body">
       <div class="comanda-list" id="cartList"></div>
-      <div class="preventa-breakdown" id="preventaBreakdown" hidden>
-        <p class="preventa-breakdown-title">🕓 Tu pedido incluye productos en preventa</p>
-        <p class="preventa-breakdown-sub">Pagás el total de hoy (con seña del 50% en los productos en preventa) y el resto cuando recibís tu pedido.</p>
-        <div class="preventa-row preventa-row-rest">
-          <span>Restante a pagar al recibir</span>
-          <b id="pbPreventaRest">$0</b>
-        </div>
-      </div>
-      <div class="profit-box" id="profitBox" hidden>
-        <p class="profit-title">💰 Calculá la rentabilidad de tu pedido</p>
-        <div class="profit-row">
-          <span>Costo mayorista</span>
-          <b id="profitCost">$0</b>
-        </div>
-        <div class="profit-row">
-          <span>Venta sugerida al público</span>
-          <b id="profitRetail">$0</b>
-        </div>
-        <div class="profit-row profit-row-gain">
-          <span>Ganancia estimada</span>
-          <b id="profitGain">$0</b>
-        </div>
-        <p class="profit-note">Precios de venta sugeridos, de referencia — pueden variar según tu zona y estrategia comercial.</p>
-      </div>
       <div class="shipping-box" id="shippingBox" hidden>
         <p class="shipping-title">📦 Calculá tu envío</p>
         <p class="shipping-sub">Los envíos se hacen por Andreani a todo el país.</p>
@@ -218,7 +194,7 @@ src="https://www.facebook.com/tr?id=1494451185781026&ev=PageView&noscript=1"
             <b id="shippingCost">$0</b>
           </div>
           <div class="shipping-result-row shipping-result-total">
-            <span>Total a pagar ahora</span>
+            <span>Total con envío</span>
             <b id="shippingGrandTotal">$0</b>
           </div>
         </div>

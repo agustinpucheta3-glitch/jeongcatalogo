@@ -31,12 +31,6 @@ function restockLabel(it){
   if(days <= 0) return "Disponible en breve";
   return "Disponible en " + days + (days === 1 ? " día" : " días");
 }
-
-function preventaDateLabel(dateStr){
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("es-AR", {day:"numeric", month:"long"});
-}
-
 function buildNav(){
   const nav = document.getElementById("catnav");
   CATALOG.forEach(cat=>{
@@ -77,11 +71,10 @@ function buildSections(){
         <div class="card-img-wrap">
           <img class="card-img" src="${it.img}" alt="${it.name}" loading="lazy">
           ${it.soldOut ? '<span class="sold-out-badge">Agotado</span>' : ''}
-          ${it.preventa ? '<span class="preventa-badge">Preventa</span>' : ''}
+          ${it.lastUnits && !it.soldOut ? '<span class="last-units-badge">🔥 Últimas unidades</span>' : ''}
         </div>
         <div class="card-name">${it.name}</div>
         <div class="card-size">${it.size}</div>
-        ${it.preventa ? `<div class="preventa-note">Llega a partir del ${preventaDateLabel(it.preventaDate)}</div>` : ''}
         <div class="card-bottom">
           <div class="card-price">${fmt(it.price)}</div>
           ${it.soldOut ? `
@@ -177,44 +170,28 @@ function renderCart(){
   const ids = Object.keys(cart);
   const count = ids.reduce((a,id)=>a+cart[id],0);
 
-  const stockIds = ids.filter(id => !findItem(id).preventa);
-  const preventaIds = ids.filter(id => findItem(id).preventa);
-  const stockSubtotal = stockIds.reduce((a,id)=>a+cart[id]*findItem(id).price,0);
-  const preventaSubtotal = preventaIds.reduce((a,id)=>a+cart[id]*findItem(id).price,0);
-  const preventaDeposit = preventaSubtotal / 2;
-  const preventaRest = preventaSubtotal - preventaDeposit;
-  const payableNow = stockSubtotal + preventaDeposit;
-  const fullTotal = stockSubtotal + preventaSubtotal; // el minimo se evalua sobre el valor total del pedido, no sobre la seña
+  const total = ids.reduce((a,id)=>a+cart[id]*findItem(id).price,0);
 
   document.getElementById("cartCount").textContent = count;
-  document.getElementById("cartTotal").textContent = fmt(payableNow);
-  document.getElementById("sendBtn").disabled = count === 0 || fullTotal < MIN_ORDER || !shippingCalculated;
+  document.getElementById("cartTotal").textContent = fmt(total);
+  document.getElementById("sendBtn").disabled = count === 0 || total < MIN_ORDER || !shippingCalculated;
 
   const minNote = document.getElementById("minOrderNote");
-  if(count > 0 && fullTotal < MIN_ORDER){
+  if(count > 0 && total < MIN_ORDER){
     minNote.hidden = false;
-    minNote.textContent = `Te faltan ${fmt(MIN_ORDER - fullTotal)} para llegar al mínimo mayorista de ${fmt(MIN_ORDER)}.`;
+    minNote.textContent = `Te faltan ${fmt(MIN_ORDER - total)} para llegar al mínimo mayorista de ${fmt(MIN_ORDER)}.`;
   } else {
     minNote.hidden = true;
   }
 
   document.getElementById("shippingBox").hidden = count === 0;
   if(shippingCalculated){
-    document.getElementById("shippingGrandTotal").textContent = fmt(payableNow + SHIPPING_COST);
-  }
-
-  const breakdown = document.getElementById("preventaBreakdown");
-  if(preventaIds.length > 0){
-    breakdown.hidden = false;
-    document.getElementById("pbPreventaRest").textContent = fmt(preventaRest);
-  } else {
-    breakdown.hidden = true;
+    document.getElementById("shippingGrandTotal").textContent = fmt(total + SHIPPING_COST);
   }
 
   const list = document.getElementById("cartList");
   if(ids.length === 0){
     list.innerHTML = `<div class="comanda-empty">Todavía no agregaste productos. Elegí cantidades arriba y volvé acá para revisar tu pedido.</div>`;
-    renderProfitBox(ids);
     return;
   }
   list.innerHTML = "";
@@ -224,34 +201,13 @@ function renderCart(){
     const row = document.createElement("div");
     row.className = "comanda-item";
     row.innerHTML = `
-      <div class="ci-name">${it.name}${it.preventa ? '<span class="ci-preventa-tag">Preventa</span>' : ''}<small>${it.size}</small></div>
+      <div class="ci-name">${it.name}<small>${it.size}</small></div>
       <div class="ci-qty">×${qty}</div>
-      <div class="ci-price">${fmt(it.price*qty)}${it.preventa ? `<span class="ci-preventa-detail">Seña: ${fmt(it.price*qty/2)}</span>` : ''}</div>
+      <div class="ci-price">${fmt(it.price*qty)}</div>
       <button class="ci-remove" data-remove="${id}" aria-label="Quitar">✕</button>
     `;
     list.appendChild(row);
   });
-
-  renderProfitBox(ids);
-}
-
-function renderProfitBox(ids){
-  const withRetail = ids.filter(id => findItem(id).retail);
-  const profitBox = document.getElementById("profitBox");
-
-  if(withRetail.length === 0){
-    profitBox.hidden = true;
-    return;
-  }
-
-  const cost = withRetail.reduce((a,id)=>a+cart[id]*findItem(id).price,0);
-  const retailTotal = withRetail.reduce((a,id)=>a+cart[id]*findItem(id).retail,0);
-  const gain = retailTotal - cost;
-
-  document.getElementById("profitCost").textContent = fmt(cost);
-  document.getElementById("profitRetail").textContent = fmt(retailTotal);
-  document.getElementById("profitGain").textContent = fmt(gain);
-  profitBox.hidden = false;
 }
 
 document.getElementById("cartList").addEventListener("click",(e)=>{
@@ -326,40 +282,18 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
   const ids = Object.keys(cart);
   if(ids.length === 0 || !shippingCalculated) return;
 
-  const stockIds = ids.filter(id => !findItem(id).preventa);
-  const preventaIds = ids.filter(id => findItem(id).preventa);
-  const stockSubtotal = stockIds.reduce((a,id)=>a+cart[id]*findItem(id).price,0);
-  const preventaSubtotal = preventaIds.reduce((a,id)=>a+cart[id]*findItem(id).price,0);
-  const preventaDeposit = preventaSubtotal / 2;
-  const preventaRest = preventaSubtotal - preventaDeposit;
-  const payableNow = stockSubtotal + preventaDeposit;
-
   let msg = "Hola! Quiero hacer este pedido a jeong:\n\n";
-
-  if(stockIds.length > 0){
-    msg += "CON STOCK:\n";
-    stockIds.forEach(id=>{
-      const it = findItem(id);
-      const qty = cart[id];
-      msg += `• ${qty}x ${it.name} (${it.size}) — ${fmt(it.price*qty)}\n`;
-    });
-    msg += "\n";
-  }
-
-  if(preventaIds.length > 0){
-    msg += `PREVENTA (llega a partir del ${preventaDateLabel(findItem(preventaIds[0]).preventaDate)}):\n`;
-    preventaIds.forEach(id=>{
-      const it = findItem(id);
-      const qty = cart[id];
-      const sub = it.price*qty;
-      msg += `• ${qty}x ${it.name} (${it.size}) — ${fmt(sub)} (seña 50%: ${fmt(sub/2)})\n`;
-    });
-    msg += "\n";
-  }
-
-  msg += `Envío (Andreani): ${fmt(SHIPPING_COST)}\n`;
-  msg += `\nTOTAL A PAGAR AHORA: ${fmt(payableNow + SHIPPING_COST)}`;
-  if(preventaIds.length > 0) msg += `\nRestante a pagar al recibir: ${fmt(preventaRest)}`;
+  let total = 0;
+  ids.forEach(id=>{
+    const it = findItem(id);
+    const qty = cart[id];
+    const sub = it.price*qty;
+    total += sub;
+    msg += `• ${qty}x ${it.name} (${it.size}) — ${fmt(sub)}\n`;
+  });
+  msg += `\nSubtotal productos: ${fmt(total)}`;
+  msg += `\nEnvío (Andreani): ${fmt(SHIPPING_COST)}`;
+  msg += `\nTotal con envío: ${fmt(total + SHIPPING_COST)}`;
   msg += `\n\nDirección de envío:`;
   msg += `\n${shipAddress.value.trim()}`;
   msg += `\n${shipProvince.value} (CP ${shipZip.value.trim()})`;
@@ -367,7 +301,7 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
   if(typeof fbq === "function"){
     fbq("track", "Lead", {
       content_ids: ids,
-      value: payableNow + SHIPPING_COST,
+      value: total + SHIPPING_COST,
       currency: "ARS"
     });
   }
@@ -508,9 +442,7 @@ function openPanel(id){
   restockNote.hidden = !it.soldOut;
   if(it.soldOut) restockNote.textContent = it.restockDate ? ("Agotado — " + restockLabel(it)) : "Agotado";
 
-  const preventaNote = document.getElementById("panelPreventaNote");
-  preventaNote.hidden = !it.preventa;
-  if(it.preventa) preventaNote.textContent = `Este producto es preventa — se abona el 50% ahora como seña y el 50% restante al recibirlo, a partir del ${preventaDateLabel(it.preventaDate)}.`;
+  document.getElementById("panelLastUnits").hidden = !(it.lastUnits && !it.soldOut);
 
   panelOverlay.classList.add("open");
   productPanel.classList.add("open");
