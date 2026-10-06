@@ -828,6 +828,7 @@
     font-weight:600;
     color:var(--coral-dark);
   }
+  .panel-last-units[hidden]{display:none;}
   .panel-last-units{
     display:inline-block;
     margin:14px 0 0;
