@@ -63,6 +63,64 @@
     display:block;
   }
 
+  /* BANNER CARRUSEL */
+  .banner{
+    position:relative;
+    width:100%;
+    max-width:1080px;
+    margin:0 auto;
+  }
+  .banner-track{
+    display:flex;
+    overflow-x:auto;
+    scroll-snap-type:x mandatory;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .banner-track::-webkit-scrollbar{display:none;}
+  .banner-slide{
+    flex:0 0 100%;
+    scroll-snap-align:start;
+  }
+  .banner-slide img{
+    display:block;
+    width:100%;
+    height:auto;
+  }
+  .banner-dots{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:12px;
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    pointer-events:none;
+  }
+  .banner-dot{
+    position:relative;
+    width:9px;
+    height:9px;
+    padding:0;
+    border:none;
+    border-radius:100px;
+    background:rgba(255,255,255,0.9);
+    box-shadow:0 0 0 1px rgba(21,19,18,0.18);
+    cursor:pointer;
+    pointer-events:auto;
+    transition:width .25s ease, background .25s ease;
+  }
+  .banner-dot::after{content:"";position:absolute;inset:-8px;}
+  .banner-dot.active{
+    width:26px;
+    background:var(--coral);
+  }
+  @media (min-width:641px){
+    .banner{padding:0 24px;}
+    .banner-track{border-radius:16px;}
+    .banner-dots{bottom:14px;}
+  }
+
   /* HERO */
   .hero{
     padding:48px 24px 32px;

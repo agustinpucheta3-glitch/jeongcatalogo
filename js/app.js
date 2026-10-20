@@ -314,6 +314,62 @@ document.getElementById("metaProducts").textContent = totalProducts();
 buildNav();
 buildSections();
 initSearch();
+initBanner();
+
+function initBanner(){
+  const track = document.getElementById("bannerTrack");
+  const dotsWrap = document.getElementById("bannerDots");
+  const n = track.children.length;
+  const dots = [];
+  let current = 0;
+  let timer = null;
+  let autoScrolling = false;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function setActive(i){
+    current = i;
+    dots.forEach((d,k)=>d.classList.toggle("active", k===i));
+  }
+
+  function goTo(i){
+    autoScrolling = true;
+    setActive(i);
+    track.scrollTo({ left: i * track.clientWidth, behavior: "smooth" });
+    setTimeout(()=>{ autoScrolling = false; }, 700);
+  }
+
+  function stop(){ clearInterval(timer); timer = null; }
+  function start(){
+    if(reduceMotion || n < 2) return;
+    stop();
+    timer = setInterval(()=>goTo((current + 1) % n), 5000);
+  }
+
+  for(let i=0; i<n; i++){
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "banner-dot";
+    b.setAttribute("aria-label", "Ir a la imagen " + (i+1));
+    b.addEventListener("click", ()=>{ goTo(i); start(); });
+    dotsWrap.appendChild(b);
+    dots.push(b);
+  }
+
+  track.addEventListener("scroll", ()=>{
+    if(autoScrolling) return;
+    const i = Math.round(track.scrollLeft / track.clientWidth);
+    if(i !== current) setActive(i);
+  }, { passive: true });
+
+  const banner = document.getElementById("banner");
+  banner.addEventListener("pointerenter", stop);
+  banner.addEventListener("pointerleave", start);
+  track.addEventListener("touchstart", stop, { passive: true });
+  track.addEventListener("touchend", start, { passive: true });
+
+  setActive(0);
+  start();
+}
 
 function normalizeText(s){
   return (s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"");
