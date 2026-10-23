@@ -31,6 +31,13 @@ function restockLabel(it){
   if(days <= 0) return "Disponible en breve";
   return "Disponible en " + days + (days === 1 ? " día" : " días");
 }
+function lastUnitsLabel(it){
+  const n = typeof it.lastUnits === "number" ? it.lastUnits : 0;
+  if(n === 1) return "🔥 Última unidad";
+  if(n > 1) return "🔥 Últimas " + n + " unidades";
+  return "🔥 Últimas unidades";
+}
+
 function buildNav(){
   const nav = document.getElementById("catnav");
   CATALOG.forEach(cat=>{
@@ -71,7 +78,7 @@ function buildSections(){
         <div class="card-img-wrap">
           <img class="card-img" src="${it.img}" alt="${it.name}" loading="lazy">
           ${it.soldOut ? '<span class="sold-out-badge">Agotado</span>' : ''}
-          ${it.lastUnits && !it.soldOut ? '<span class="last-units-badge">🔥 Últimas unidades</span>' : ''}
+          ${it.lastUnits && !it.soldOut ? `<span class="last-units-badge">${lastUnitsLabel(it)}</span>` : ''}
         </div>
         <div class="card-name">${it.name}</div>
         <div class="card-size">${it.size}</div>
@@ -498,7 +505,9 @@ function openPanel(id){
   restockNote.hidden = !it.soldOut;
   if(it.soldOut) restockNote.textContent = it.restockDate ? ("Agotado — " + restockLabel(it)) : "Agotado";
 
-  document.getElementById("panelLastUnits").hidden = !(it.lastUnits && !it.soldOut);
+  const lastUnitsEl = document.getElementById("panelLastUnits");
+  lastUnitsEl.hidden = !(it.lastUnits && !it.soldOut);
+  if(it.lastUnits) lastUnitsEl.textContent = lastUnitsLabel(it);
 
   panelOverlay.classList.add("open");
   productPanel.classList.add("open");
