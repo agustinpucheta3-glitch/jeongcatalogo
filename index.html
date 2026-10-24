@@ -82,7 +82,7 @@ src="https://www.facebook.com/tr?id=1494451185781026&ev=PageView&noscript=1"
   <p>Elegí los productos y cantidades que querés llevar. Al armar el pedido, se genera automáticamente el detalle para enviarnos por WhatsApp — así confirmamos stock y coordinamos el envío.</p>
   <div class="hero-meta">
     <span><b id="metaProducts">—</b> productos</span>
-    <span><b>9</b> categorías</span>
+    <span><b id="metaCats">—</b> categorías</span>
     <span>Precios por unidad, en pesos</span>
   </div>
 </div>
@@ -129,6 +129,7 @@ src="https://www.facebook.com/tr?id=1494451185781026&ev=PageView&noscript=1"
     </div>
     <p class="panel-restock-note" id="panelRestockNote" hidden></p>
     <p class="panel-last-units" id="panelLastUnits" hidden>🔥 Últimas unidades</p>
+    <p class="panel-preventa-note" id="panelPreventaNote" hidden></p>
     <div class="panel-stepper-row" id="panelStepperRow">
       <div class="stepper" id="panelStepper">
         <button aria-label="Restar" data-panel-act="minus">−</button>
@@ -153,6 +154,10 @@ src="https://www.facebook.com/tr?id=1494451185781026&ev=PageView&noscript=1"
     </div>
     <div class="comanda-body">
       <div class="comanda-list" id="cartList"></div>
+      <div class="preventa-breakdown" id="preventaBreakdown" hidden>
+        <p class="preventa-breakdown-title">🕓 Tu pedido incluye productos en preventa</p>
+        <p class="preventa-breakdown-sub">Pagás hoy el total (con el 50% de los productos en preventa) y el resto cuando recibís tu pedido.</p>
+      </div>
       <div class="shipping-box" id="shippingBox" hidden>
         <p class="shipping-title">📦 Calculá tu envío</p>
         <p class="shipping-sub">Los envíos se hacen por Andreani a todo el país.</p>
@@ -203,8 +208,12 @@ src="https://www.facebook.com/tr?id=1494451185781026&ev=PageView&noscript=1"
             <b id="shippingCost">$0</b>
           </div>
           <div class="shipping-result-row shipping-result-total">
-            <span>Total con envío</span>
+            <span id="shippingTotalLabel">Total con envío</span>
             <b id="shippingGrandTotal">$0</b>
+          </div>
+          <div class="shipping-result-row shipping-result-rest" id="shippingRestRow" hidden>
+            <span>Total restante (a pagar al recibir)</span>
+            <b id="shippingRest">$0</b>
           </div>
         </div>
       </div>

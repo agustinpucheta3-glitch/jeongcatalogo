@@ -13,6 +13,52 @@ CATALOG.forEach((cat,ci)=>cat.items.forEach((it,ii)=>it.id = ci+"-"+ii));
 const cart = {}; // id -> qty
 const fmt = n => "$" + n.toLocaleString("es-AR");
 
+// ---- PRE VENTA: se abona la mitad ahora y la otra mitad al recibir ----
+const isPre = it => !!it.preventa && !it.soldOut;
+
+function preventaDateLabel(){
+  const d = new Date(PREVENTA_FECHA + "T00:00:00");
+  return d.toLocaleDateString("es-AR", {day:"numeric", month:"long"});
+}
+
+function preventaNoteText(){
+  return "Andá reservando tus unidades de los nuevos ingresos abonando la mitad. Disponibles a partir del " + preventaDateLabel() + ".";
+}
+
+// Secciones visibles: PRE VENTAS primero (junta los productos marcados como
+// preventa, sin duplicar fichas) y despues las categorias que tengan productos.
+function getSections(){
+  const list = [];
+  const pre = [];
+  CATALOG.forEach(cat=>cat.items.forEach(it=>{ if(isPre(it)) pre.push(it); }));
+  if(pre.length) list.push({ n:"PV", title:"PRE VENTAS", label:"PRE VENTAS", items:pre, pv:true });
+  CATALOG.forEach(cat=>{
+    if(cat.items.length) list.push({ n:cat.n, title:cat.title, label:cat.n+" · "+cat.title, items:cat.items, pv:false });
+  });
+  return list;
+}
+const SECTIONS = getSections();
+
+function cartTotals(){
+  const ids = Object.keys(cart);
+  let stock = 0, pre = 0;
+  ids.forEach(id=>{
+    const it = findItem(id);
+    const sub = it.price * cart[id];
+    if(isPre(it)) pre += sub; else stock += sub;
+  });
+  const deposit = pre / 2;
+  return {
+    ids,
+    count: ids.reduce((a,id)=>a+cart[id],0),
+    stock, pre, deposit,
+    rest: pre - deposit,            // la otra mitad, a pagar al recibir
+    payableNow: stock + deposit,    // lo que se cobra ahora (sin envio)
+    fullTotal: stock + pre,         // valor completo del pedido (para el minimo de compra)
+    hasPre: pre > 0
+  };
+}
+
 function totalProducts(){
   return CATALOG.reduce((a,c)=>a+c.items.length,0);
 }
@@ -40,48 +86,58 @@ function lastUnitsLabel(it){
 
 function buildNav(){
   const nav = document.getElementById("catnav");
-  CATALOG.forEach(cat=>{
+  SECTIONS.forEach(s=>{
     const btn = document.createElement("button");
-    btn.textContent = cat.n + " · " + cat.title;
+    btn.textContent = s.label;
+    if(s.pv) btn.classList.add("pv");
     btn.onclick = ()=>{
-      document.getElementById("sec-"+cat.n).scrollIntoView({behavior:"smooth", block:"start"});
+      document.getElementById("sec-"+s.n).scrollIntoView({behavior:"smooth", block:"start"});
     };
-    btn.dataset.target = cat.n;
+    btn.dataset.target = s.n;
     nav.appendChild(btn);
   });
 }
 
+// Un mismo producto puede estar en dos secciones (PRE VENTAS y su categoria):
+// por eso las tarjetas se identifican con data-id y no con un id unico.
+function cardDomId(s, it){ return (s.pv ? "pv-card-" : "card-") + it.id; }
+
 function buildSections(){
   const main = document.getElementById("sections");
-  CATALOG.forEach(cat=>{
+  SECTIONS.forEach(s=>{
     const sec = document.createElement("section");
     sec.className = "section";
-    sec.id = "sec-"+cat.n;
+    sec.id = "sec-"+s.n;
 
     sec.innerHTML = `
       <div class="section-head">
-        <span class="section-num">${cat.n}</span>
-        <h2>${cat.title}</h2>
+        ${s.pv ? '' : `<span class="section-num">${s.n}</span>`}
+        <h2>${s.title}</h2>
       </div>
-      <div class="section-count">${cat.items.length} producto${cat.items.length===1?'':'s'}</div>
-      <div class="grid" id="grid-${cat.n}"></div>
+      ${s.pv ? `<p class="section-note">${preventaNoteText()}</p>` : ''}
+      <div class="section-count">${s.items.length} producto${s.items.length===1?'':'s'}</div>
+      <div class="grid" id="grid-${s.n}"></div>
     `;
     main.appendChild(sec);
 
     const grid = sec.querySelector(".grid");
-    cat.items.forEach(it=>{
+    s.items.forEach(it=>{
+      const pre = isPre(it);
       const card = document.createElement("div");
       card.className = "card" + (it.soldOut ? " sold-out" : "");
-      card.id = "card-"+it.id;
+      card.id = cardDomId(s, it);
+      card.dataset.id = it.id;
       if(it.benefit){ card.setAttribute("data-has-detail","1"); }
       card.innerHTML = `
         <div class="card-img-wrap">
           <img class="card-img" src="${it.img}" alt="${it.name}" loading="lazy">
           ${it.soldOut ? '<span class="sold-out-badge">Agotado</span>' : ''}
-          ${it.lastUnits && !it.soldOut ? `<span class="last-units-badge">${lastUnitsLabel(it)}</span>` : ''}
+          ${pre ? '<span class="preventa-badge">Preventa</span>' : ''}
+          ${it.lastUnits && !it.soldOut && !pre ? `<span class="last-units-badge">${lastUnitsLabel(it)}</span>` : ''}
         </div>
         <div class="card-name">${it.name}</div>
         <div class="card-size">${it.size}</div>
+        ${pre ? `<div class="preventa-note">Llega a partir del ${preventaDateLabel()}</div>` : ''}
         <div class="card-bottom">
           <div class="card-price">${fmt(it.price)}</div>
           ${it.soldOut ? `
@@ -89,7 +145,7 @@ function buildSections(){
           ` : `
           <div class="stepper">
             <button aria-label="Restar" data-act="minus" data-id="${it.id}">−</button>
-            <input class="qty" id="qty-${it.id}" type="number" inputmode="numeric" min="0" step="1" value="0" data-id="${it.id}" aria-label="Cantidad">
+            <input class="qty" type="number" inputmode="numeric" min="0" step="1" value="0" data-id="${it.id}" aria-label="Cantidad">
             <button aria-label="Sumar" data-act="plus" data-id="${it.id}">+</button>
           </div>
           `}
@@ -110,8 +166,7 @@ function buildSections(){
     // open detail panel when tapping the card itself (not the stepper area)
     const card = e.target.closest(".card[data-has-detail]");
     if(card && !e.target.closest(".stepper")){
-      const id = card.id.replace("card-","");
-      openPanel(id);
+      openPanel(card.dataset.id);
     }
   });
 
@@ -147,13 +202,19 @@ function setQty(id, rawValue){
   applyQty(id, next);
 }
 
+// Actualiza la cantidad y el resaltado en todas las tarjetas del producto
+// (puede estar en PRE VENTAS y en su categoria a la vez).
+function syncCardsFor(id, qty){
+  document.querySelectorAll('input.qty[data-id="'+id+'"]').forEach(inp=>{ inp.value = qty; });
+  document.querySelectorAll('.card[data-id="'+id+'"]').forEach(c=>c.classList.toggle("in-cart", qty > 0));
+}
+
 function applyQty(id, next){
   const prev = cart[id] || 0;
   if(next === 0) delete cart[id];
   else cart[id] = next;
 
-  document.getElementById("qty-"+id).value = next;
-  document.getElementById("card-"+id).classList.toggle("in-cart", next > 0);
+  syncCardsFor(id, next);
   if(typeof panelItemId !== "undefined" && panelItemId === id){
     const pq = document.getElementById("panelQty");
     if(pq) pq.value = next;
@@ -174,26 +235,31 @@ function applyQty(id, next){
 }
 
 function renderCart(){
-  const ids = Object.keys(cart);
-  const count = ids.reduce((a,id)=>a+cart[id],0);
+  const t = cartTotals();
+  const { ids, count } = t;
 
-  const total = ids.reduce((a,id)=>a+cart[id]*findItem(id).price,0);
-
+  // Sin preventa el carrito funciona exactamente igual que siempre.
   document.getElementById("cartCount").textContent = count;
-  document.getElementById("cartTotal").textContent = fmt(total);
-  document.getElementById("sendBtn").disabled = count === 0 || total < MIN_ORDER || !shippingCalculated;
+  document.getElementById("cartTotal").textContent = fmt(t.payableNow);
+  document.getElementById("sendBtn").disabled = count === 0 || t.fullTotal < MIN_ORDER || !shippingCalculated;
 
+  // El minimo se mide sobre el valor completo del pedido (preventa a precio completo).
   const minNote = document.getElementById("minOrderNote");
-  if(count > 0 && total < MIN_ORDER){
+  if(count > 0 && t.fullTotal < MIN_ORDER){
     minNote.hidden = false;
-    minNote.textContent = `Te faltan ${fmt(MIN_ORDER - total)} para llegar al mínimo mayorista de ${fmt(MIN_ORDER)}.`;
+    minNote.textContent = `Te faltan ${fmt(MIN_ORDER - t.fullTotal)} para llegar al mínimo mayorista de ${fmt(MIN_ORDER)}.`
+      + (t.hasPre ? " Los productos en preventa cuentan por su precio completo." : "");
   } else {
     minNote.hidden = true;
   }
 
   document.getElementById("shippingBox").hidden = count === 0;
+  document.getElementById("preventaBreakdown").hidden = !t.hasPre;
+  document.getElementById("shippingTotalLabel").textContent = t.hasPre ? "Total a pagar ahora" : "Total con envío";
+  document.getElementById("shippingRestRow").hidden = !t.hasPre;
+  document.getElementById("shippingRest").textContent = fmt(t.rest);
   if(shippingCalculated){
-    document.getElementById("shippingGrandTotal").textContent = fmt(total + SHIPPING_COST);
+    document.getElementById("shippingGrandTotal").textContent = fmt(t.payableNow + SHIPPING_COST);
   }
 
   const list = document.getElementById("cartList");
@@ -205,12 +271,14 @@ function renderCart(){
   ids.forEach(id=>{
     const it = findItem(id);
     const qty = cart[id];
+    const pre = isPre(it);
+    const line = it.price * qty;
     const row = document.createElement("div");
     row.className = "comanda-item";
     row.innerHTML = `
-      <div class="ci-name">${it.name}<small>${it.size}</small></div>
+      <div class="ci-name">${it.name}${pre ? '<span class="ci-preventa-tag">Preventa</span>' : ''}<small>${it.size}</small></div>
       <div class="ci-qty">×${qty}</div>
-      <div class="ci-price">${fmt(it.price*qty)}</div>
+      <div class="ci-price">${fmt(pre ? line/2 : line)}${pre ? `<span class="ci-preventa-detail">Falta abonar ${fmt(line/2)}</span>` : ''}</div>
       <button class="ci-remove" data-remove="${id}" aria-label="Quitar">✕</button>
     `;
     list.appendChild(row);
@@ -222,8 +290,7 @@ document.getElementById("cartList").addEventListener("click",(e)=>{
   if(!rm) return;
   const id = rm.dataset.remove;
   delete cart[id];
-  document.getElementById("qty-"+id).value = 0;
-  document.getElementById("card-"+id).classList.remove("in-cart");
+  syncCardsFor(id, 0);
   renderCart();
 });
 
@@ -273,34 +340,56 @@ document.getElementById("comandaTab").addEventListener("click", ()=>{
   document.getElementById("whatsappFab").classList.toggle("fab-hidden", isOpen);
 
   if(isOpen && typeof fbq === "function"){
-    const ids = Object.keys(cart);
-    if(ids.length > 0){
+    const t = cartTotals();
+    if(t.ids.length > 0){
       fbq("track", "InitiateCheckout", {
-        content_ids: ids,
-        value: ids.reduce((a,id)=>a+cart[id]*findItem(id).price,0),
+        content_ids: t.ids,
+        value: t.payableNow,
         currency: "ARS",
-        num_items: ids.reduce((a,id)=>a+cart[id],0)
+        num_items: t.count
       });
     }
   }
 });
 
 document.getElementById("sendBtn").addEventListener("click", ()=>{
-  const ids = Object.keys(cart);
+  const t = cartTotals();
+  const ids = t.ids;
   if(ids.length === 0 || !shippingCalculated) return;
 
   let msg = "Hola! Quiero hacer este pedido a jeong:\n\n";
-  let total = 0;
-  ids.forEach(id=>{
-    const it = findItem(id);
-    const qty = cart[id];
-    const sub = it.price*qty;
-    total += sub;
-    msg += `• ${qty}x ${it.name} (${it.size}) — ${fmt(sub)}\n`;
-  });
-  msg += `\nSubtotal productos: ${fmt(total)}`;
-  msg += `\nEnvío (Andreani): ${fmt(SHIPPING_COST)}`;
-  msg += `\nTotal con envío: ${fmt(total + SHIPPING_COST)}`;
+
+  if(!t.hasPre){
+    // Pedido sin preventa: mismo mensaje de siempre.
+    ids.forEach(id=>{
+      const it = findItem(id);
+      const qty = cart[id];
+      msg += `• ${qty}x ${it.name} (${it.size}) — ${fmt(it.price*qty)}\n`;
+    });
+    msg += `\nSubtotal productos: ${fmt(t.stock)}`;
+    msg += `\nEnvío (Andreani): ${fmt(SHIPPING_COST)}`;
+    msg += `\nTotal con envío: ${fmt(t.stock + SHIPPING_COST)}`;
+  } else {
+    const stockIds = ids.filter(id => !isPre(findItem(id)));
+    const preIds = ids.filter(id => isPre(findItem(id)));
+    if(stockIds.length){
+      msg += "CON STOCK:\n";
+      stockIds.forEach(id=>{
+        const it = findItem(id);
+        msg += `• ${cart[id]}x ${it.name} (${it.size}) — ${fmt(it.price*cart[id])}\n`;
+      });
+      msg += "\n";
+    }
+    msg += `PREVENTA (llega a partir del ${preventaDateLabel()}):\n`;
+    preIds.forEach(id=>{
+      const it = findItem(id);
+      const line = it.price*cart[id];
+      msg += `• ${cart[id]}x ${it.name} (${it.size}) — ${fmt(line)} (hoy: ${fmt(line/2)} · falta abonar: ${fmt(line/2)})\n`;
+    });
+    msg += `\nEnvío (Andreani): ${fmt(SHIPPING_COST)}`;
+    msg += `\n\nTOTAL A PAGAR AHORA: ${fmt(t.payableNow + SHIPPING_COST)}`;
+    msg += `\nTOTAL RESTANTE (a pagar al recibir): ${fmt(t.rest)}`;
+  }
   msg += `\n\nDirección de envío:`;
   msg += `\n${shipAddress.value.trim()}`;
   msg += `\n${shipProvince.value} (CP ${shipZip.value.trim()})`;
@@ -308,7 +397,7 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
   if(typeof fbq === "function"){
     fbq("track", "Lead", {
       content_ids: ids,
-      value: total + SHIPPING_COST,
+      value: t.payableNow + SHIPPING_COST,
       currency: "ARS"
     });
   }
@@ -318,6 +407,7 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
 });
 
 document.getElementById("metaProducts").textContent = totalProducts();
+document.getElementById("metaCats").textContent = SECTIONS.length;
 buildNav();
 buildSections();
 initSearch();
@@ -403,23 +493,23 @@ function applySearch(rawQuery){
   const q = normalizeText(rawQuery.trim());
   let anyMatch = false;
 
-  CATALOG.forEach(cat=>{
+  SECTIONS.forEach(s=>{
     let visibleInCat = 0;
-    cat.items.forEach(it=>{
+    s.items.forEach(it=>{
       const haystack = normalizeText(it.name + " " + (it.benefit || ""));
       const match = q === "" || haystack.includes(q);
-      const card = document.getElementById("card-"+it.id);
+      const card = document.getElementById(cardDomId(s, it));
       if(card) card.style.display = match ? "" : "none";
       if(match) visibleInCat++;
     });
 
-    const sec = document.getElementById("sec-"+cat.n);
+    const sec = document.getElementById("sec-"+s.n);
     if(sec){
       sec.style.display = visibleInCat === 0 ? "none" : "";
       const countEl = sec.querySelector(".section-count");
       if(countEl){
         countEl.textContent = q === ""
-          ? cat.items.length + (cat.items.length === 1 ? " producto" : " productos")
+          ? s.items.length + (s.items.length === 1 ? " producto" : " productos")
           : visibleInCat + (visibleInCat === 1 ? " resultado" : " resultados");
       }
     }
@@ -431,7 +521,7 @@ function applySearch(rawQuery){
 renderCart();
 
 // scroll-spy for nav active state
-const sections = CATALOG.map(c=>document.getElementById("sec-"+c.n));
+const sections = SECTIONS.map(s=>document.getElementById("sec-"+s.n));
 const navButtons = Array.from(document.getElementById("catnav").children);
 const spy = new IntersectionObserver((entries)=>{
   entries.forEach(entry=>{
@@ -508,6 +598,10 @@ function openPanel(id){
   const lastUnitsEl = document.getElementById("panelLastUnits");
   lastUnitsEl.hidden = !(it.lastUnits && !it.soldOut);
   if(it.lastUnits) lastUnitsEl.textContent = lastUnitsLabel(it);
+
+  const preventaNote = document.getElementById("panelPreventaNote");
+  preventaNote.hidden = !isPre(it);
+  if(isPre(it)) preventaNote.textContent = `Este producto es preventa — se abona el 50% ahora y el 50% restante al recibirlo, a partir del ${preventaDateLabel()}.`;
 
   panelOverlay.classList.add("open");
   productPanel.classList.add("open");

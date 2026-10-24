@@ -39,6 +39,15 @@
 //                  lastUnits:true  -> "🔥 Últimas unidades"
 //                  lastUnits:2     -> "🔥 Últimas 2 unidades" (poné el número que quedan)
 //                  Para sacarlo, borrá este campo.
+//   preventa    -> (opcional) poné "true" para marcarlo como PRE VENTA.
+//                  Aparece en la categoría "PRE VENTAS" (la primera) Y en su
+//                  categoría de siempre, con el cartel "Preventa". En el
+//                  carrito se abona la MITAD ahora y la otra mitad al recibirlo.
+//                  La fecha de llegada se cambia abajo, en PREVENTA_FECHA.
+//                  Para sacarlo de preventa (pasa a producto normal), borrá este campo.
+//
+// Las categorías que no tienen productos no se muestran (ej: "Bálsamos"
+// aparece sola apenas le cargues el primer producto).
 //
 // Para AGREGAR un producto: copiá una línea { ... } entera de un
 // producto parecido, pegala donde quieras dentro de la misma
@@ -55,6 +64,9 @@
 // falte o sobre una coma o una llave — fijate en el producto de
 // al lado para copiar el mismo patrón exacto.
 // ============================================================
+
+// Fecha desde la que están disponibles los productos en PRE VENTA ("AAAA-MM-DD").
+const PREVENTA_FECHA = "2026-11-05";
 
 const CATALOG = [
 { n:"01", title:"Mascarillas faciales", items:[
@@ -170,5 +182,7 @@ const CATALOG = [
   {key:"roundlab-dokdo-lotion", name:"Round Lab 1025 Dokdo Lotion", size:"200 ml", price:18700, retail:35000, img:"images/roundlab-dokdo-lotion.jpg", images:["images/roundlab-dokdo-lotion.jpg","images/roundlab-dokdo-lotion-2.jpg"], benefit:"Loción hidratante ligera (tipo emulsión) que aporta hidratación profunda sin sensación pesada, ideal para mantener el equilibrio de la piel y reforzar la barrera cutánea.", skin:"Para todo tipo de piel.", ingredients:"Agua marina profunda de Dokdo, pantenol y alantoína.", modo:"Después del tónico, antes de la crema hidratante, o puede reemplazarla en caso de piel mixta/grasa."},
   {key:"anua-heartleaf70-daily-relief-lotion", name:"Anua Heartleaf 70% Daily Relief Lotion", size:"200 ml", price:25100, retail:45000, img:"images/anua-heartleaf70-daily-relief-lotion.jpg", images:["images/anua-heartleaf70-daily-relief-lotion.jpg","images/anua-heartleaf70-daily-relief-lotion-2.jpg"], benefit:"Exfoliante físico muy delicado que actúa arrastrando células muertas, sebo y suciedad acumulada, sin necesidad de partículas abrasivas. Estas 'bolitas' se forman por la celulosa del producto, que se adhiere a las impurezas para retirarlas suavemente.", skin:"Ideal para piel sensible o irritada, piel mixta a grasa, con acné o rojeces.", ingredients:"70% extracto de heartleaf, pantenol y ácido hialurónico.", modo:"Aplicar cantidad moderada sobre rostro limpio después del tónico o sérum. Masajear suavemente hasta su total absorción."},
   {key:"medicube-centellascar-ointment", name:"Medicube Centellascar Ointment", size:"15 ml", price:18150, retail:25000, img:"images/medicube-centellascar-ointment.jpg", benefit:"Pomada reparadora intensiva con centella asiática que calma, regenera y fortalece la barrera cutánea, ayudando a reducir rojeces, inflamación, marcas post-acné e irritaciones mientras mejora la textura de la piel.", skin:"Todo tipo de piel, especialmente sensible o con imperfecciones.", ingredients:"Centella asiática, madecasósido y agentes reparadores.", modo:"Aplicar una pequeña cantidad sobre zonas dañadas o con marcas después de la rutina."},
+]},
+{ n:"10", title:"Bálsamos", items:[
 ]},
 ];
