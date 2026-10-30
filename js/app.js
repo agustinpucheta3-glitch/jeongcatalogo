@@ -84,6 +84,15 @@ function lastUnitsLabel(it){
   return "🔥 Últimas unidades";
 }
 
+// Cartel sobre la foto: "Últimas unidades" si corresponde y, si no, "Nuevos ingresos".
+// Un producto agotado no lleva cartel.
+function tagLabel(it){
+  if(it.soldOut) return "";
+  if(it.lastUnits) return lastUnitsLabel(it);
+  if(it.nuevo) return "🔥 Nuevos ingresos";
+  return "";
+}
+
 function buildNav(){
   const nav = document.getElementById("catnav");
   SECTIONS.forEach(s=>{
@@ -133,7 +142,7 @@ function buildSections(){
           <img class="card-img" src="${it.img}" alt="${it.name}" loading="lazy">
           ${it.soldOut ? '<span class="sold-out-badge">Agotado</span>' : ''}
           ${pre ? '<span class="preventa-badge">Preventa</span>' : ''}
-          ${it.lastUnits && !it.soldOut && !pre ? `<span class="last-units-badge">${lastUnitsLabel(it)}</span>` : ''}
+          ${!pre && tagLabel(it) ? `<span class="last-units-badge">${tagLabel(it)}</span>` : ''}
         </div>
         <div class="card-name">${it.name}</div>
         <div class="card-size">${it.size}</div>
@@ -596,8 +605,8 @@ function openPanel(id){
   if(it.soldOut) restockNote.textContent = it.restockDate ? ("Agotado — " + restockLabel(it)) : "Agotado";
 
   const lastUnitsEl = document.getElementById("panelLastUnits");
-  lastUnitsEl.hidden = !(it.lastUnits && !it.soldOut);
-  if(it.lastUnits) lastUnitsEl.textContent = lastUnitsLabel(it);
+  lastUnitsEl.hidden = !tagLabel(it);
+  if(tagLabel(it)) lastUnitsEl.textContent = tagLabel(it);
 
   const preventaNote = document.getElementById("panelPreventaNote");
   preventaNote.hidden = !isPre(it);
