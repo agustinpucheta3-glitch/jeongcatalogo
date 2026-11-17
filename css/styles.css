@@ -1000,3 +1000,23 @@
     color:var(--coral-dark);
   }
   .panel-preventa-note[hidden]{display:none;}
+
+/* Aviso de maximo por pedido */
+.limit-note{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  transform:translate(-50%, 20px);
+  max-width:calc(100% - 32px);
+  padding:10px 16px;
+  border-radius:10px;
+  background:#222;
+  color:#fff;
+  font-size:14px;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s, transform .2s;
+  z-index:1000;
+}
+.limit-note.visible{ opacity:1; transform:translate(-50%, 0); }

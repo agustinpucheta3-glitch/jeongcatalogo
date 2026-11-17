@@ -218,8 +218,26 @@ function syncCardsFor(id, qty){
   document.querySelectorAll('.card[data-id="'+id+'"]').forEach(c=>c.classList.toggle("in-cart", qty > 0));
 }
 
+// Aviso breve cuando se intenta superar el maximo por pedido (campo maxQty).
+let limitTimer;
+function showLimitNote(max){
+  let el = document.getElementById("limitNote");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "limitNote";
+    el.className = "limit-note";
+    document.body.appendChild(el);
+  }
+  el.textContent = "Máximo " + max + (max === 1 ? " unidad" : " unidades") + " por pedido de este producto.";
+  el.classList.add("visible");
+  clearTimeout(limitTimer);
+  limitTimer = setTimeout(()=>el.classList.remove("visible"), 2500);
+}
+
 function applyQty(id, next){
   const prev = cart[id] || 0;
+  const maxQty = findItem(id).maxQty;
+  if(maxQty && next > maxQty){ next = maxQty; showLimitNote(maxQty); }
   if(next === 0) delete cart[id];
   else cart[id] = next;
 
