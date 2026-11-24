@@ -1,0 +1,21 @@
+# Configuración de Netlify para el catálogo mayorista de jeong.
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Archivos internos que no tienen que poder verse desde el navegador.
+# (La lista de códigos la lee sólo la función, no la página.)
+[[redirects]]
+  from = "/data/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify/*"
+  to = "/404.html"
+  status = 404
+  force = true

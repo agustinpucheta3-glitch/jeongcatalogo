@@ -158,6 +158,24 @@ src="https://www.facebook.com/tr?id=1494451185781026&ev=PageView&noscript=1"
         <p class="preventa-breakdown-title">🕓 Tu pedido incluye productos en preventa</p>
         <p class="preventa-breakdown-sub">Pagás hoy el total (con el 50% de los productos en preventa) y el resto cuando recibís tu pedido.</p>
       </div>
+      <div class="discount-box" id="discountBox" hidden>
+        <p class="discount-title">🏷️ ¿Tenés un código de descuento?</p>
+        <div class="discount-form" id="discountForm">
+          <input type="text" id="discountInput" placeholder="Ingresá tu código" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" aria-label="Código de descuento">
+          <button type="button" class="discount-apply-btn" id="discountApplyBtn">Aplicar</button>
+        </div>
+        <p class="discount-msg" id="discountMsg" hidden></p>
+        <div class="discount-applied" id="discountApplied" hidden>
+          <div class="discount-applied-row">
+            <span id="discountAppliedLabel"></span>
+            <button type="button" class="discount-remove" id="discountRemoveBtn">Quitar</button>
+          </div>
+          <div class="discount-applied-row"><span>Subtotal sin descuento</span><b id="discountSubtotal">$0</b></div>
+          <div class="discount-applied-row discount-applied-total"><span>Descuento</span><b id="discountAmount">$0</b></div>
+          <p class="discount-expiry" id="discountExpiry" hidden></p>
+        </div>
+      </div>
+
       <div class="shipping-box" id="shippingBox" hidden>
         <p class="shipping-title">📦 Calculá tu envío</p>
         <p class="shipping-sub">Los envíos se hacen por Andreani a todo el país.</p>

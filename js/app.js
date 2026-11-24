@@ -39,23 +39,46 @@ function getSections(){
 }
 const SECTIONS = getSections();
 
+// ---- CODIGO DE DESCUENTO ----
+// Lo valida la funcion de Netlify (netlify/functions/descuento.mjs); los codigos y su
+// vencimiento se cargan en data/codigos.json. Se descuenta sobre el valor completo del
+// pedido (el envio no se descuenta) y el minimo mayorista se mide antes del descuento.
+let discount = null; // { codigo, tipo, valor, vence, compra_minima }
+
+function discountExpired(d){
+  return !!(d && d.vence && !(Date.now() <= Date.parse(d.vence)));
+}
+
+function discountAmount(d, base){
+  if(!d || base <= 0) return 0;
+  return d.tipo === "monto" ? Math.min(d.valor, base) : Math.round(base * d.valor / 100);
+}
+
 function cartTotals(){
   const ids = Object.keys(cart);
-  let stock = 0, pre = 0;
+  let grossStock = 0, grossPre = 0;
   ids.forEach(id=>{
     const it = findItem(id);
     const sub = it.price * cart[id];
-    if(isPre(it)) pre += sub; else stock += sub;
+    if(isPre(it)) grossPre += sub; else grossStock += sub;
   });
+  const fullTotal = grossStock + grossPre;     // valor completo (para el minimo de compra)
+  const disc = discountExpired(discount) ? 0 : discountAmount(discount, fullTotal);
+  const netTotal = fullTotal - disc;
+  // El descuento se reparte en forma proporcional entre lo que hay en stock y la preventa.
+  const pre = fullTotal ? Math.round(grossPre * netTotal / fullTotal) : 0;
+  const stock = netTotal - pre;
   const deposit = pre / 2;
   return {
     ids,
     count: ids.reduce((a,id)=>a+cart[id],0),
-    stock, pre, deposit,
+    stock, pre, deposit,            // ya con el descuento aplicado
     rest: pre - deposit,            // la otra mitad, a pagar al recibir
     payableNow: stock + deposit,    // lo que se cobra ahora (sin envio)
-    fullTotal: stock + pre,         // valor completo del pedido (para el minimo de compra)
-    hasPre: pre > 0
+    fullTotal,
+    discount: disc, netTotal,
+    ratio: fullTotal ? netTotal / fullTotal : 1,
+    hasPre: grossPre > 0
   };
 }
 
@@ -261,9 +284,51 @@ function applyQty(id, next){
   renderCart();
 }
 
+function setDiscountMsg(text){
+  const el = document.getElementById("discountMsg");
+  el.textContent = text || "";
+  el.hidden = !text;
+}
+
+function expiryLabel(vence){
+  return new Date(vence).toLocaleString("es-AR", {
+    timeZone: "America/Argentina/Buenos_Aires",
+    day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", hour12: false
+  }) + " hs";
+}
+
+// Saca el codigo si ya vencio o si el pedido dejo de cumplir su compra minima.
+function dropInvalidDiscount(){
+  if(!discount) return;
+  if(discountExpired(discount)){
+    setDiscountMsg(`El código ${discount.codigo} venció.`);
+    discount = null;
+  } else if(discount.compra_minima && cartTotals().fullTotal < discount.compra_minima){
+    setDiscountMsg(`El código ${discount.codigo} necesita un pedido de al menos ${fmt(discount.compra_minima)}.`);
+    discount = null;
+  }
+}
+
+function renderDiscountBox(t){
+  document.getElementById("discountBox").hidden = t.count === 0;
+  const applied = !!discount;
+  document.getElementById("discountForm").hidden = applied;
+  document.getElementById("discountApplied").hidden = !applied;
+  if(!applied) return;
+  document.getElementById("discountAppliedLabel").textContent =
+    "Código " + discount.codigo + (discount.tipo === "porcentaje" ? " · " + discount.valor + "% OFF" : " · " + fmt(discount.valor) + " OFF");
+  document.getElementById("discountSubtotal").textContent = fmt(t.fullTotal);
+  document.getElementById("discountAmount").textContent = "−" + fmt(t.discount);
+  const exp = document.getElementById("discountExpiry");
+  exp.hidden = !discount.vence;
+  if(discount.vence) exp.textContent = "Válido hasta el " + expiryLabel(discount.vence) + ".";
+}
+
 function renderCart(){
+  dropInvalidDiscount();
   const t = cartTotals();
   const { ids, count } = t;
+  renderDiscountBox(t);
 
   // Sin preventa el carrito funciona exactamente igual que siempre.
   document.getElementById("cartCount").textContent = count;
@@ -300,12 +365,14 @@ function renderCart(){
     const qty = cart[id];
     const pre = isPre(it);
     const line = it.price * qty;
+    // Con codigo de descuento, la mitad de la preventa se calcula sobre el precio ya descontado.
+    const half = t.ratio === 1 ? line/2 : Math.round(line * t.ratio / 2);
     const row = document.createElement("div");
     row.className = "comanda-item";
     row.innerHTML = `
       <div class="ci-name">${it.name}${pre ? '<span class="ci-preventa-tag">Preventa</span>' : ''}<small>${it.size}</small></div>
       <div class="ci-qty">×${qty}</div>
-      <div class="ci-price">${fmt(pre ? line/2 : line)}${pre ? `<span class="ci-preventa-detail">Falta abonar ${fmt(line/2)}</span>` : ''}</div>
+      <div class="ci-price">${fmt(pre ? half : line)}${pre ? `<span class="ci-preventa-detail">Falta abonar ${fmt(half)}</span>` : ''}</div>
       <button class="ci-remove" data-remove="${id}" aria-label="Quitar">✕</button>
     `;
     list.appendChild(row);
@@ -318,6 +385,55 @@ document.getElementById("cartList").addEventListener("click",(e)=>{
   const id = rm.dataset.remove;
   delete cart[id];
   syncCardsFor(id, 0);
+  renderCart();
+});
+
+// codigo de descuento: se valida en la funcion de Netlify
+const discountInput = document.getElementById("discountInput");
+const discountApplyBtn = document.getElementById("discountApplyBtn");
+
+const DISCOUNT_ERRORS = {
+  invalido: "Ese código no existe. Revisá que esté bien escrito.",
+  inactivo: "Ese código ya no está activo.",
+  vencido: "Ese código ya venció."
+};
+
+async function applyDiscountCode(){
+  const codigo = discountInput.value.trim();
+  if(!codigo){ setDiscountMsg("Ingresá un código."); return; }
+  discountApplyBtn.disabled = true;
+  setDiscountMsg("Validando código…");
+  try{
+    const res = await fetch("/.netlify/functions/descuento", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ codigo, subtotal: cartTotals().fullTotal })
+    });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok || !data) throw new Error("respuesta invalida");
+    if(data.ok){
+      discount = { codigo: data.codigo, tipo: data.tipo, valor: data.valor, vence: data.vence || null, compra_minima: data.compra_minima || null };
+      discountInput.value = "";
+      setDiscountMsg("");
+    } else if(data.motivo === "minimo"){
+      setDiscountMsg(`Ese código se puede usar en pedidos de al menos ${fmt(data.compra_minima)}.`);
+    } else {
+      setDiscountMsg(DISCOUNT_ERRORS[data.motivo] || DISCOUNT_ERRORS.invalido);
+    }
+  }catch(err){
+    setDiscountMsg("No pudimos validar el código. Probá de nuevo en un rato; el pedido se puede enviar igual, sin descuento.");
+  }finally{
+    discountApplyBtn.disabled = false;
+    renderCart();
+  }
+}
+
+discountApplyBtn.addEventListener("click", applyDiscountCode);
+discountInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter"){ e.preventDefault(); applyDiscountCode(); } });
+discountInput.addEventListener("input", ()=>setDiscountMsg(""));
+document.getElementById("discountRemoveBtn").addEventListener("click", ()=>{
+  discount = null;
+  setDiscountMsg("");
   renderCart();
 });
 
@@ -383,6 +499,8 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
   const t = cartTotals();
   const ids = t.ids;
   if(ids.length === 0 || !shippingCalculated) return;
+  // Si el codigo vencio mientras armaba el pedido, se saca y se le avisa (hay que volver a enviar).
+  if(discountExpired(discount)){ renderCart(); return; }
 
   let msg = "Hola! Quiero hacer este pedido a jeong:\n\n";
 
@@ -393,7 +511,8 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
       const qty = cart[id];
       msg += `• ${qty}x ${it.name} (${it.size}) — ${fmt(it.price*qty)}\n`;
     });
-    msg += `\nSubtotal productos: ${fmt(t.stock)}`;
+    msg += `\nSubtotal productos: ${fmt(t.fullTotal)}`;
+    if(t.discount) msg += `\nDescuento (código ${discount.codigo}): −${fmt(t.discount)}`;
     msg += `\nEnvío (Andreani): ${fmt(SHIPPING_COST)}`;
     msg += `\nTotal con envío: ${fmt(t.stock + SHIPPING_COST)}`;
   } else {
@@ -411,8 +530,14 @@ document.getElementById("sendBtn").addEventListener("click", ()=>{
     preIds.forEach(id=>{
       const it = findItem(id);
       const line = it.price*cart[id];
-      msg += `• ${cart[id]}x ${it.name} (${it.size}) — ${fmt(line)} (hoy: ${fmt(line/2)} · falta abonar: ${fmt(line/2)})\n`;
+      const half = t.ratio === 1 ? line/2 : Math.round(line * t.ratio / 2);
+      msg += `• ${cart[id]}x ${it.name} (${it.size}) — ${fmt(line)} (hoy: ${fmt(half)} · falta abonar: ${fmt(half)})\n`;
     });
+    if(t.discount){
+      msg += `\nSubtotal sin descuento: ${fmt(t.fullTotal)}`;
+      msg += `\nDescuento (código ${discount.codigo}): −${fmt(t.discount)}`;
+      msg += `\nTotal del pedido con descuento: ${fmt(t.netTotal)} (lo de hoy y lo restante ya lo incluyen)`;
+    }
     msg += `\nEnvío (Andreani): ${fmt(SHIPPING_COST)}`;
     msg += `\n\nTOTAL A PAGAR AHORA: ${fmt(t.payableNow + SHIPPING_COST)}`;
     msg += `\nTOTAL RESTANTE (a pagar al recibir): ${fmt(t.rest)}`;

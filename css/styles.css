@@ -1020,3 +1020,89 @@
   z-index:1000;
 }
 .limit-note.visible{ opacity:1; transform:translate(-50%, 0); }
+
+/* Codigo de descuento en el carrito */
+  .discount-box{
+    margin:6px 20px 0;
+    padding:14px 16px;
+    border-radius:14px;
+    background:rgba(247,244,239,0.06);
+    border:1px solid rgba(247,244,239,0.18);
+  }
+  .discount-box[hidden]{display:none;}
+  .discount-title{
+    font-family:'Baloo 2',sans-serif;
+    font-weight:700;
+    font-size:13.5px;
+    margin:0 0 10px;
+    color:var(--paper);
+  }
+  .discount-form{display:flex; gap:8px;}
+  .discount-form[hidden]{display:none;}
+  .discount-form input{
+    flex:1;
+    min-width:0;
+    background:rgba(247,244,239,0.08);
+    border:1px solid rgba(247,244,239,0.22);
+    border-radius:8px;
+    padding:9px 10px;
+    color:var(--paper);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    text-transform:uppercase;
+    outline:none;
+  }
+  .discount-form input::placeholder{color:rgba(247,244,239,0.4); text-transform:none;}
+  .discount-form input:focus{border-color:var(--coral);}
+  .discount-apply-btn{
+    padding:0 16px;
+    border-radius:8px;
+    border:1px solid var(--coral);
+    background:transparent;
+    color:var(--coral);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .discount-apply-btn:hover:not(:disabled){background:rgba(217,99,57,0.15);}
+  .discount-apply-btn:disabled{opacity:.4; cursor:wait;}
+  .discount-msg{
+    margin:8px 0 0;
+    font-size:11.5px;
+    line-height:1.45;
+    color:#F0C179;
+  }
+  .discount-msg[hidden]{display:none;}
+  .discount-applied[hidden]{display:none;}
+  .discount-applied-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12.5px;
+    color:rgba(247,244,239,0.72);
+    padding:3px 0;
+  }
+  .discount-applied-row b{color:var(--paper); font-weight:500;}
+  .discount-applied-row:first-child span{color:var(--paper); font-weight:500;}
+  .discount-applied-total b{color:var(--coral);}
+  .discount-remove{
+    background:none;
+    border:0;
+    padding:0;
+    color:rgba(247,244,239,0.6);
+    font-family:'Inter',sans-serif;
+    font-size:11.5px;
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .discount-remove:hover{color:var(--paper);}
+  .discount-expiry{
+    margin:6px 0 0;
+    font-size:11px;
+    color:rgba(247,244,239,0.55);
+  }
+  .discount-expiry[hidden]{display:none;}
