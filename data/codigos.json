@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "codigo": "BLACK10JEONG",
+    "tipo": "porcentaje",
+    "valor": 10,
+    "activo": true,
+    "vence": "2026-11-29T23:59:00-03:00",
+    "compra_minima": null
+  }
+]
