@@ -72,7 +72,7 @@
 // ============================================================
 
 // Fecha desde la que están disponibles los productos en PRE VENTA ("AAAA-MM-DD").
-const PREVENTA_FECHA = "2026-11-28";
+const PREVENTA_FECHA = "2026-12-10";
 
 const CATALOG = [
 { n:"01", title:"Mascarillas faciales", items:[
